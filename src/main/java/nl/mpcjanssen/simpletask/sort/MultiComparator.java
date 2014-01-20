@@ -32,6 +32,8 @@ public class MultiComparator<Task> implements Comparator<Task> {
             }
             if (sortType.equals("file_order")) {
                 comparators.add(new FileOrderComparator(reverse));
+                // Additional sorts will have no effect after this sort
+		break;
             } else if (sortType.equals("by_context")) {
                 comparators.add(new ContextComparator(reverse));
             } else if (sortType.equals("by_project")) {

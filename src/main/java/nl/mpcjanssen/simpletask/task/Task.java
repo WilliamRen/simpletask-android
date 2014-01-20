@@ -77,6 +77,7 @@ public class Task implements Serializable, Comparable<Task> {
     private static DateTimeFormatter formatter = ISODateTimeFormat.date();
     private String text;
     private long id = 0;
+    private boolean cacheDirty = true;
 
 
     public Task(long id, String rawText, DateTime defaultPrependedDate) {
@@ -98,6 +99,7 @@ public class Task implements Serializable, Comparable<Task> {
 
     public void init(String rawText, DateTime defaultPrependedDate) {
         this.text = rawText;
+	cacheDirty=true;
         if (defaultPrependedDate != null
                 && getPrependedDate() == null) {
             Priority p = getPriority();
@@ -137,6 +139,7 @@ public class Task implements Serializable, Comparable<Task> {
         } else {
             text = text + " due:" + dueDateString;
         }
+	cacheDirty=true;
     }
 
     public DateTime getThresholdDate() {
