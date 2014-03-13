@@ -4,6 +4,8 @@ import junit.framework.TestCase;
 
 import org.joda.time.DateTime;
 
+import org.robolectric.Robolectric;
+
 import java.util.Date;
 
 import nl.mpcjanssen.simpletask.task.Task;
@@ -143,7 +145,7 @@ public class TaskTest extends TestCase {
 
     public void testInvalidCreateDate() {
         Task t1 = new Task(0, "2013-11-31 Test");
-        assertEquals("2013-11-31",t1.getRelativeAge());
+        assertEquals("2013-11-31",t1.getRelativeAge(Robolectric.application));
     }
 
     public void testInvalidCompleteDate() {

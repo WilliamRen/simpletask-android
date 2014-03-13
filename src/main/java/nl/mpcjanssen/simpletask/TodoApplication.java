@@ -275,7 +275,7 @@ public class TodoApplication extends Application implements SharedPreferences.On
     }
     
     public boolean isCloudLess() {
-        return BuildConfig.CLOUDLESS;
+        return true;
     }
 
     public boolean isManualMode() {

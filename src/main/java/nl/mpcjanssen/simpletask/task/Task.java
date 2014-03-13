@@ -22,6 +22,7 @@
  */
 package nl.mpcjanssen.simpletask.task;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.text.SpannableString;
 
@@ -85,7 +86,7 @@ public class Task implements Serializable, Comparable<Task> {
     }
 
     public Task(long id, String rawText) {
-        this(id, rawText, null);
+        this( id, rawText, null);
     }
 
     public static boolean validTag(String tag) {
@@ -204,7 +205,7 @@ public class Task implements Serializable, Comparable<Task> {
         }
     }
 
-    public String getRelativeAge() {
+    public String getRelativeAge(Context context) {
         DateTime dt;
         String prependDate = getPrependedDate();
         if (prependDate==null) {
@@ -215,13 +216,13 @@ public class Task implements Serializable, Comparable<Task> {
         } catch (IllegalFieldValueException e) {
             return prependDate;
         }
-        return RelativeDate.getRelativeDate(dt);
+        return RelativeDate.getRelativeDate(context, dt);
     }
 
-    public SpannableString getRelativeDueDate(Resources res, boolean useColor) {
+    public SpannableString getRelativeDueDate(Context context, Resources res, boolean useColor) {
         DateTime dueDate = getDueDate();
         if (dueDate!=null) {
-            String relativeDate = RelativeDate.getRelativeDate(dueDate);
+            String relativeDate = RelativeDate.getRelativeDate(context, dueDate);
             SpannableString ss = new SpannableString("Due: " +  relativeDate);
             if (relativeDate.equals(res.getString(R.string.dates_today)) && useColor) {
                 Util.setColor(ss, res.getColor(android.R.color.holo_green_light));
@@ -234,10 +235,10 @@ public class Task implements Serializable, Comparable<Task> {
         }
     }
 
-    public String getRelativeThresholdDate() {
+    public String getRelativeThresholdDate(Context context) {
         DateTime thresholdDate = getThresholdDate();
         if (thresholdDate!=null) {
-            return "T: " + RelativeDate.getRelativeDate(thresholdDate);
+            return "T: " + RelativeDate.getRelativeDate(context, thresholdDate);
         } else {
             return null;
         }

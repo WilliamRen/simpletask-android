@@ -33,9 +33,6 @@ import java.util.Locale;
 
 public class RelativeDate {
 
-	private static Context context = TodoApplication.getAppContext();
-	
-	
 	/**
 	 * This method computes the relative date according to the Calendar being
 	 * passed in and the number of years, months, days, etc. that differ. This
@@ -54,7 +51,7 @@ public class RelativeDate {
 	 * @return String representing the relative date
 	 */
 
-    public static String computeRelativeDate(DateTime now, DateTime when) {
+    public static String computeRelativeDate(Context context, DateTime now, DateTime when) {
         if (when.isBefore(now) || when.equals(now)) {
             Interval interval = new Interval(when, now);
             Period period = interval.toPeriod();
@@ -98,10 +95,10 @@ public class RelativeDate {
 	 * @return String representing the relative date
 	 */
 
-	public static String getRelativeDate(DateTime when) {
+	public static String getRelativeDate(Context context, DateTime when) {
 
 		DateTime now = new DateTime();
-		return computeRelativeDate(now, when);
+		return computeRelativeDate(context, now, when);
 
 	}
 

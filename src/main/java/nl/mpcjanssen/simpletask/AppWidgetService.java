@@ -140,9 +140,9 @@ class AppWidgetRemoteViewsFactory implements RemoteViewsService.RemoteViewsFacto
 	    }
 	    rv.setTextViewText(R.id.tasktext,ss);
 
-	    String relAge = task.getRelativeAge();
-	    SpannableString relDue = task.getRelativeDueDate(res, true);
-	    String relThres = task.getRelativeThresholdDate();
+	    String relAge = task.getRelativeAge(mContext);
+	    SpannableString relDue = task.getRelativeDueDate(mContext, res, true);
+	    String relThres = task.getRelativeThresholdDate(mContext);
 	    boolean anyDateShown = false;
 	    if (!Strings.isEmptyOrNull(relAge)) {
 		rv.setTextViewText(R.id.taskage,relAge);

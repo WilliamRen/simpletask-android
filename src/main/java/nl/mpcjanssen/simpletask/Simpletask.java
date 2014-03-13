@@ -95,6 +95,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
     private static final int SYNC_CONFLICT_DIALOG = 101;
     Menu options_menu;
     TodoApplication m_app;
+    Context app_ctx;
     ActiveFilter mFilter;
     TaskAdapter m_adapter;
     private BroadcastReceiver m_broadcastReceiver;
@@ -158,6 +159,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         super.onCreate(savedInstanceState);
+    app_ctx = m_app.getAppContext();
 
 	final IntentFilter intentFilter = new IntentFilter();
 	intentFilter.addAction(getPackageName()+Constants.BROADCAST_ACTION_ARCHIVE);
@@ -953,7 +955,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 		public void onClick(DialogInterface dialog, int whichButton) {
 		    String value = input.getText().toString();
 		    if (value.equals("")) {
-			Util.showToastShort(getApplicationContext(), R.string.filter_name_empty);
+			Util.showToastShort(app_ctx, R.string.filter_name_empty);
 		    } else {
 			SharedPreferences saved_filters = getSharedPreferences("filters", MODE_PRIVATE);
 			int newId  = saved_filters.getInt("max_id", 1)+1;
@@ -1137,7 +1139,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 		public void onClick(DialogInterface dialog, int whichButton) {
 		    String value = input.getText().toString();
 		    if (value.equals("")) {
-			Util.showToastShort(getApplicationContext(), R.string.filter_name_empty);
+			Util.showToastShort(app_ctx, R.string.filter_name_empty);
 		    } else {
 			mFilter.setName(value);
 			mFilter.saveInPrefs(filter_pref);
@@ -1475,9 +1477,9 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 
 
 
-		    String relAge = task.getRelativeAge();
-		    SpannableString relDue = task.getRelativeDueDate(res, m_app.hasColorDueDates());
-		    String relThres = task.getRelativeThresholdDate();
+		    String relAge = task.getRelativeAge(app_ctx);
+		    SpannableString relDue = task.getRelativeDueDate(app_ctx, res, m_app.hasColorDueDates());
+		    String relThres = task.getRelativeThresholdDate(app_ctx);
 		    boolean anyDateShown = false;
 		    if (!Strings.isEmptyOrNull(relAge)) {
 			holder.taskage.setText(relAge);
