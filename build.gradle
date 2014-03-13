@@ -6,10 +6,12 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:0.8.+'
+        classpath 'org.robolectric.gradle:gradle-android-test-plugin:0.9.+'
     }
 }
 
 apply plugin: 'android'
+apply plugin: 'android-test'
 
 android {
     packagingOptions {
@@ -21,7 +23,7 @@ android {
         mavenCentral()
     }
 
-    buildToolsVersion "19.0.0"
+    buildToolsVersion "19.0.3"
     compileSdkVersion 19
 
     defaultConfig {
@@ -29,17 +31,10 @@ android {
         versionCode 1075
     }
 
-
     productFlavors {
         free {
             packageName 'nl.mpcjanssen.todotxtholo'
             buildConfigField "boolean", "CLOUDLESS", "false"
-        }
-        // Special flavor for testing as this is uninstalled after
-        // completion of the test run
-        unit {
-            packageName 'nl.mpcjanssen.simpletask.test'
-            buildConfigField "boolean", "CLOUDLESS", "true"
         }
         cloudless {
             packageName 'nl.mpcjanssen.simpletask'
@@ -52,7 +47,10 @@ android {
         compile 'com.android.support:support-v4:19.0.0'
         compile 'joda-time:joda-time:2.3'
         compile 'org.commonjava.googlecode.markdown4j:markdown4j:2.2-cj-1.0'
+        instrumentTestCompile 'junit:junit:4.10'
+        instrumentTestCompile 'org.robolectric:robolectric:2.1.+'
     }
+
 
     signingConfigs {
         release {
@@ -65,7 +63,7 @@ android {
             signingConfig signingConfigs.release
         }
     }
-    check.dependsOn 'connectedInstrumentTestUnitDebug'
+    //check.dependsOn 'connectedInstrumentTestUnitDebug'
 }
 
 // Only sign if we have keystore properties in the gradle.properties
