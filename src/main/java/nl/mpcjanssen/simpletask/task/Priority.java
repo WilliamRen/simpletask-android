@@ -23,6 +23,7 @@
 package nl.mpcjanssen.simpletask.task;
 
 import java.util.ArrayList;
+import java.util.TreeSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -105,7 +106,11 @@ public enum Priority {
         return result;
     }
 
-    public static ArrayList<String> inCode(List<Priority> priorities) {
+    public static ArrayList<String> inCode(TreeSet<Priority> priorities) {
+        return inCode(new ArrayList<Priority>(priorities));
+    }
+
+    public static ArrayList<String> inCode(ArrayList<Priority> priorities) {
         ArrayList<String> strings = new ArrayList<String>();
         for (Priority p : priorities) {
             strings.add(p.getCode());

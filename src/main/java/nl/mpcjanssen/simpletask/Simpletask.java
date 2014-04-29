@@ -9,7 +9,6 @@
 package nl.mpcjanssen.simpletask;
 
 import nl.mpcjanssen.simpletask.adapters.DrawerAdapter;
-import nl.mpcjanssen.simpletask.remote.RemoteClient;
 import nl.mpcjanssen.simpletask.sort.MultiComparator;
 import nl.mpcjanssen.simpletask.task.Priority;
 import nl.mpcjanssen.simpletask.task.Task;
@@ -91,8 +90,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
     private final static int REQUEST_PREFERENCES = 2;
     private final static int DRAWER_CONTEXT = 1;
     private final static int DRAWER_PROJECT = 2;
-    private static final int SYNC_CHOICE_DIALOG = 100;
-    private static final int SYNC_CONFLICT_DIALOG = 101;
     Menu options_menu;
     TodoApplication m_app;
     ActiveFilter mFilter;
@@ -161,40 +158,18 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 
 	final IntentFilter intentFilter = new IntentFilter();
 	intentFilter.addAction(Constants.BROADCAST_ACTION_ARCHIVE);
-	intentFilter.addAction(Constants.BROADCAST_SYNC_CONFLICT);
-	intentFilter.addAction(Constants.BROADCAST_ACTION_LOGOUT);
 	intentFilter.addAction(Constants.BROADCAST_UPDATE_UI);
-	intentFilter.addAction(Constants.BROADCAST_SYNC_START);
-	intentFilter.addAction(Constants.BROADCAST_SYNC_DONE);
 
 	m_broadcastReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 		    if (intent.getAction().equals(Constants.BROADCAST_ACTION_ARCHIVE)) {
-			// archive
-			// refresh screen to remove completed tasks
-			// push to remote
-			archiveTasks(null);
-		    } else if (intent.getAction().equals(Constants.BROADCAST_ACTION_LOGOUT)) {
-			Log.v(TAG, "Logging out from Dropbox");
-			m_app.getRemoteClientManager().getRemoteClient()
-			    .deauthenticate();
-			m_app.setManualMode(false);
-			Intent i = new Intent(context, LoginScreen.class);
-			startActivity(i);
-			finish();
+                archiveTasks(null);
 		    } else if (intent.getAction().equals(Constants.BROADCAST_UPDATE_UI)) {
-			handleIntent(null);
-		    } else if (intent.getAction().endsWith(
-							   Constants.BROADCAST_SYNC_CONFLICT)) {
-			handleSyncConflict();
-		    } else if (intent.getAction().equals(Constants.BROADCAST_SYNC_START) && !m_app.isCloudLess()) {
-			setProgressBarIndeterminateVisibility(true);
-		    } else if (intent.getAction().equals(Constants.BROADCAST_SYNC_DONE) && !m_app.isCloudLess()) {
-			setProgressBarIndeterminateVisibility(false);
-		    }
-		}
-	    };
+                handleIntent(null);
+		    } 
+	    }
+    };
 	registerReceiver(m_broadcastReceiver, intentFilter);
 
 
@@ -219,9 +194,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	}
 	setProgressBarIndeterminateVisibility(false);
 	getTaskBag().reload();
-        if(m_app.hasSyncOnResume()) {
-            syncClient(false);
-        }
 	handleIntent(savedInstanceState);
     }
 
@@ -230,17 +202,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
     }
 
     private void handleIntent(Bundle savedInstanceState) {
-	if (!m_app.isCloudLess()) {
-	    RemoteClient remoteClient = m_app.getRemoteClientManager()
-		.getRemoteClient();
-	    // Keep allowing use of the app in manual unauthenticated mode
-	    // This will probably be removed in the future.
-	    if (!remoteClient.isAuthenticated() && !m_app.isManualMode()) {
-		startLogin();
-		return;
-	    }
-	}
-
 	mFilter = new ActiveFilter(getResources());
 
 	m_leftDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -289,19 +250,13 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 
 	// Show search or filter results
 	Intent intent = getIntent();
-	if (savedInstanceState != null) {
-	    Log.v(TAG, "handleIntent: savedInstance state");
-	    mFilter.initFromBundle(savedInstanceState);
-
-	} else if (intent.getExtras() != null) {
+	if (intent.getExtras() != null) {
 	    Log.v(TAG, "handleIntent launched with filter:" + intent.getExtras().keySet());
 	    mFilter.initFromIntent(intent);
 	} else {
 	    // Set previous filters and sort
 	    Log.v(TAG, "handleIntent: from m_prefs state");
 	    mFilter.initFromPrefs(TodoApplication.getPrefs());
-
-
 	}
 
 	// Initialize Adapter
@@ -362,22 +317,11 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	filterText.setText(mFilter.getTitle());
     }
 
-    private void startLogin() {
-	Intent intent = new Intent(this, LoginScreen.class);
-	startActivity(intent);
-	finish();
-    }
 
     @Override
     protected void onDestroy() {
 	super.onDestroy();
 	unregisterReceiver(m_broadcastReceiver);
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-	super.onSaveInstanceState(outState);
-	mFilter.saveInBundle(outState);
     }
 
     @Override
@@ -416,10 +360,8 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	searchView.setIconifiedByDefault(false); 
 
 	this.options_menu = menu;
-	if (m_app.isCloudLess()) {
 	    menu.findItem(R.id.sync).setVisible(false);
-	}
-	return super.onCreateOptionsMenu(menu);
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
@@ -491,10 +433,8 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 								     }
 								     getTaskBag().store();
 								     m_app.updateWidgets();
-								     m_app.setNeedToPush(true);
 								     // We have change the data, views should refresh
 								     m_adapter.setFilteredTasks(false);
-								     sendBroadcast(new ApplicationIntent(Simpletask.this, Simpletask.class, Constants.BROADCAST_START_SYNC_TO_REMOTE));
 
 								 }
 							     });
@@ -504,10 +444,10 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
     private void tagTasks(final List<Task> tasks) {
         TaskBag taskBag = getTaskBag();
 	List<String> strings = new ArrayList<String>();
-	for (String s: taskBag.getContexts(false)) {
+	for (String s: taskBag.getContexts()) {
 	    strings.add("@"+s);
 	}
-	for (String s: taskBag.getProjects(false)) {
+	for (String s: taskBag.getProjects()) {
 	    strings.add("+"+s);
 	}
 	final String[] items = strings.toArray(new String[strings.size()]);
@@ -525,10 +465,8 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 								     }
 								     getTaskBag().store();
 								     m_app.updateWidgets();
-								     m_app.setNeedToPush(true);
 								     // We have change the data, views should refresh
 								     m_adapter.setFilteredTasks(false);
-								     sendBroadcast(new ApplicationIntent(Simpletask.this, Simpletask.class, Constants.BROADCAST_START_SYNC_TO_REMOTE));
 
 								 }
 							     });
@@ -554,10 +492,8 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 		    finishActionmode();
 		    getTaskBag().store();
 		    m_app.updateWidgets();
-		    m_app.setNeedToPush(true);
 		    // We have change the data, views should refresh
 		    m_adapter.setFilteredTasks(false);
-		    sendBroadcast(new Intent(getPackageName()+Constants.BROADCAST_START_SYNC_TO_REMOTE));
 		}
 	    });
 	builder.show();
@@ -590,10 +526,8 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	    taskBag.archive(null);
 	}
 	m_app.updateWidgets();
-	m_app.setNeedToPush(true);
 	// We have change the data, views should refresh
 	m_adapter.setFilteredTasks(true);
-    sendBroadcast(new ApplicationIntent(this, Simpletask.class, Constants.BROADCAST_START_SYNC_TO_REMOTE));
     }
 
     private void undoCompleteTasks(List<Task> tasks) {
@@ -604,10 +538,8 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	}
 	getTaskBag().store();
 	m_app.updateWidgets();
-	m_app.setNeedToPush(true);
 	// We have change the data, views should refresh
 	m_adapter.setFilteredTasks(true);
-    sendBroadcast(new ApplicationIntent(this, Simpletask.class, Constants.BROADCAST_START_SYNC_TO_REMOTE));
     }
 
     private void deferTasks(List<Task> tasks, final int dateType ) {
@@ -653,9 +585,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	m_adapter.setFilteredTasks(false);
 	getTaskBag().store();
 	m_app.updateWidgets();
-	m_app.setNeedToPush(true);
-	// We have change the data, views should refresh
-	sendBroadcast(new Intent(getPackageName()+Constants.BROADCAST_START_SYNC_TO_REMOTE));
     }
 
     private void deferTasks(String selected, List<Task> tasksToDefer, int type) {
@@ -671,9 +600,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	m_adapter.setFilteredTasks(false);
 	getTaskBag().store();
 	m_app.updateWidgets();
-	m_app.setNeedToPush(true);
-	// We have change the data, views should refresh
-	sendBroadcast(new Intent(getPackageName()+Constants.BROADCAST_START_SYNC_TO_REMOTE));
     }
 
     private void deleteTasks(final List<Task> tasks) {
@@ -688,10 +614,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 		    m_adapter.setFilteredTasks(false);
 		    getTaskBag().store();
 		    m_app.updateWidgets();
-		    m_app.setNeedToPush(true);
 		    updateDrawers();
-		    // We have change the data, views should refresh
-		    sendBroadcast(new Intent(getPackageName() + Constants.BROADCAST_START_SYNC_TO_REMOTE));
 		}
 	    }, R.string.delete_task_title);
     }
@@ -717,9 +640,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 				       "Archived tasks");
 		    m_adapter.setFilteredTasks(false);
 		    m_app.updateWidgets();
-		    m_app.setNeedToPush(true);
 		    updateDrawers();
-		    sendBroadcast(new Intent(getPackageName()+Constants.BROADCAST_START_SYNC_TO_REMOTE));
 		} else {
 		    Util.showToastLong(Simpletask.this,
 				       "Could not archive tasks");
@@ -746,9 +667,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	case R.id.share:
 	    shareTodoList();
 	    break;
-	case R.id.sync:
-	    syncClient(false);
-	    break;
 	case R.id.help:
 	    showHelp();
 	    break;
@@ -761,16 +679,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 		}, R.string.archive_task_title);
 	    break;
 	case R.id.open_file:
-	    if (m_app.isCloudLess()) {
 		m_app.openCloudlessFile(this);
-	    } else {
-		m_app.showConfirmationDialog(this, R.string.dropbox_open, new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-			    m_app.openDropboxFile(Simpletask.this);
-			}
-		    }, R.string.dropbox);
-	    }
 	    break;
 	default:
 	    return super.onMenuItemSelected(featureId, item);
@@ -796,118 +705,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	Intent settingsActivity = new Intent(getBaseContext(),
 					     Preferences.class);
 	startActivityForResult(settingsActivity, REQUEST_PREFERENCES);
-    }
-
-    /**
-     * Called when we can't sync due to a merge conflict. Prompts the user to
-     * force an upload or download.
-     */
-    private void handleSyncConflict() {
-	m_app.m_pushing = false;
-	m_app.m_pulling = false;
-	showDialog(SYNC_CONFLICT_DIALOG);
-    }
-
-    /**
-     * Sync with remote client.
-     * <p/>
-     * <ul>
-     * <li>Will Pull in auto mode.
-     * <li>Will ask "push or pull" in manual mode.
-     * </ul>
-     *
-     * @param force
-     *            true to force pull
-     */
-    private void syncClient(boolean force) {
-	if (isManualMode()) {
-	    Log.v(TAG,
-		  "Manual mode, choice forced; prompt user to ask which way to sync");
-	    showDialog(SYNC_CHOICE_DIALOG);
-	} else {
-	    Log.i(TAG, "auto sync mode; should automatically sync; force = "
-		  + force);
-	    Intent i = new Intent(getPackageName()+Constants.BROADCAST_START_SYNC_WITH_REMOTE);
-	    if (force) {
-		i.putExtra(Constants.EXTRA_FORCE_SYNC, true);
-	    }
-	    sendBroadcast(i);
-	}
-    }
-
-    private boolean isManualMode() {
-	return m_app.isManualMode();
-    }
-
-    @Override
-    protected Dialog onCreateDialog(int id) {
-	final Dialog d;
-	if (id == SYNC_CHOICE_DIALOG) {
-	    Log.v(TAG, "Time to show the sync choice dialog");
-	    AlertDialog.Builder upDownChoice = new AlertDialog.Builder(this);
-	    upDownChoice.setTitle(R.string.sync_dialog_title);
-	    upDownChoice.setMessage(R.string.sync_dialog_msg);
-	    upDownChoice.setPositiveButton(R.string.sync_dialog_upload,
-					   new DialogInterface.OnClickListener() {
-					       @Override
-					       public void onClick(DialogInterface arg0, int arg1) {
-						   sendBroadcast(new Intent(
-									    getPackageName()+Constants.BROADCAST_START_SYNC_TO_REMOTE)
-								 .putExtra(Constants.EXTRA_FORCE_SYNC, true));
-						   // backgroundPushToRemote();
-						   showToast(getString(R.string.sync_upload_message));
-						   removeDialog(SYNC_CHOICE_DIALOG);
-					       }
-					   });
-	    upDownChoice.setNegativeButton(R.string.sync_dialog_download,
-					   new DialogInterface.OnClickListener() {
-					       @Override
-					       public void onClick(DialogInterface arg0, int arg1) {
-						   sendBroadcast(new Intent(
-									    getPackageName()+Constants.BROADCAST_START_SYNC_FROM_REMOTE)
-								 .putExtra(Constants.EXTRA_FORCE_SYNC, true));
-						   // backgroundPullFromRemote();
-						   showToast(getString(R.string.sync_download_message));
-						   removeDialog(SYNC_CHOICE_DIALOG);
-					       }
-					   });
-	    return upDownChoice.show();
-	} else if (id == SYNC_CONFLICT_DIALOG) {
-	    Log.v(TAG, "Time to show the sync conflict dialog");
-	    AlertDialog.Builder upDownChoice = new AlertDialog.Builder(this);
-	    upDownChoice.setTitle(R.string.sync_conflict_dialog_title);
-	    upDownChoice.setMessage(R.string.sync_conflict_dialog_msg);
-	    upDownChoice.setPositiveButton(R.string.sync_dialog_upload,
-					   new DialogInterface.OnClickListener() {
-					       @Override
-					       public void onClick(DialogInterface arg0, int arg1) {
-						   Log.v(TAG, "User selected PUSH");
-						   sendBroadcast(new Intent(
-									    getPackageName()+Constants.BROADCAST_START_SYNC_TO_REMOTE)
-								 .putExtra(Constants.EXTRA_OVERWRITE, true)
-								 .putExtra(Constants.EXTRA_FORCE_SYNC, true));
-						   // backgroundPushToRemote();
-						   showToast(getString(R.string.sync_upload_message));
-						   removeDialog(SYNC_CONFLICT_DIALOG);
-					       }
-					   });
-	    upDownChoice.setNegativeButton(R.string.sync_dialog_download,
-					   new DialogInterface.OnClickListener() {
-					       @Override
-					       public void onClick(DialogInterface arg0, int arg1) {
-						   Log.v(TAG, "User selected PULL");
-						   sendBroadcast(new Intent(
-									    getPackageName()+Constants.BROADCAST_START_SYNC_FROM_REMOTE)
-								 .putExtra(Constants.EXTRA_FORCE_SYNC, true));
-						   // backgroundPullFromRemote();
-						   showToast(getString(R.string.sync_download_message));
-						   removeDialog(SYNC_CONFLICT_DIALOG);
-					       }
-					   });
-	    return upDownChoice.show();
-	} else {
-	    return null;
-	}
     }
 
     /**
@@ -1080,7 +877,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 
     public void createFilterShortcut(ActiveFilter filter) {
         final Intent shortcut = new Intent("com.android.launcher.action.INSTALL_SHORTCUT");
-        Intent target = new Intent(Constants.INTENT_START_FILTER);
+        Intent target = new Intent(this, Simpletask.class);
         filter.saveInIntent(target);
 
         target.putExtra("name", filter.getName());
@@ -1162,7 +959,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
     private void updateLeftDrawer() {
         TaskBag taskBag = getTaskBag();
         DrawerAdapter drawerAdapter = new DrawerAdapter(getLayoutInflater(),
-							taskBag.getDecoratedContexts(true), taskBag.getDecoratedProjects(true));
+							taskBag.getContexts(), taskBag.getProjects());
 
 	m_leftDrawerList.setAdapter(drawerAdapter);
         m_leftDrawerList.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
@@ -1183,13 +980,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
         }
         m_leftDrawerList.setItemChecked(drawerAdapter.getContextHeaderPosition(), mFilter.getContextsNot());
         m_leftDrawerList.setItemChecked(drawerAdapter.getProjectsHeaderPosition(), mFilter.getProjectsNot());
-    }
-
-    public void storeKeys(String accessTokenKey, String accessTokenSecret) {
-	Editor editor = m_app.getPrefs().edit();
-	editor.putString(Constants.PREF_ACCESSTOKEN_KEY, accessTokenKey);
-	editor.putString(Constants.PREF_ACCESSTOKEN_SECRET, accessTokenSecret);
-	editor.commit();
     }
 
     public void showToast(String string) {
@@ -1748,7 +1538,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
         Set<String> selectedContexts = new HashSet<String>();
 
         TaskBag taskbag = getTaskBag();
-        contexts.addAll(taskbag.getContexts(false));
+        contexts.addAll(taskbag.getContexts());
         for (Task t: checkedTasks) {
             selectedContexts.addAll(t.getLists());
         }
@@ -1799,7 +1589,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 		    m_adapter.setFilteredTasks(false);
 		    getTaskBag().store();
 		    m_app.updateWidgets();
-		    m_app.setNeedToPush(true);
 		    updateDrawers();
 		}
 	    });
@@ -1819,7 +1608,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
         Set<String> selectedProjects= new HashSet<String>();
 
         TaskBag taskbag = getTaskBag();
-        projects.addAll(taskbag.getProjects(false));
+        projects.addAll(taskbag.getProjects());
         for (Task t: checkedTasks) {
             selectedProjects.addAll(t.getTags());
         }
@@ -1868,7 +1657,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 		    m_adapter.setFilteredTasks(false);
 		    getTaskBag().store();
 		    m_app.updateWidgets();
-		    m_app.setNeedToPush(true);
 		    updateDrawers();
 		}
 	    });

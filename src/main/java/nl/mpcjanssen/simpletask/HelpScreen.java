@@ -30,7 +30,7 @@ import java.util.*;
 
 public class HelpScreen extends Activity {
 
-    final static String TAG = LoginScreen.class.getSimpleName();
+    final static String TAG = HelpScreen.class.getSimpleName();
 
     private TodoApplication m_app;
     private BroadcastReceiver m_broadcastReceiver;

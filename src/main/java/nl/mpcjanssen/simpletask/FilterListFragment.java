@@ -23,14 +23,12 @@ public class FilterListFragment extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
         Log.v(TAG, "onCreate() this:" + this);
     }
 
     @Override
     public void onDestroy() {
-        // TODO Auto-generated method stub
         super.onDestroy();
         Log.v(TAG, "onDestroy() this:" + this);
     }
@@ -51,6 +49,7 @@ public class FilterListFragment extends Fragment {
 
         Bundle arguments = getArguments();
         ArrayList<String> items = arguments.getStringArrayList(FilterActivity.FILTER_ITEMS);
+        items.add(0,"-");
         actionbar = getActivity().getActionBar();
 
         if (savedInstanceState != null) {

@@ -80,10 +80,6 @@ public class Preferences extends ThemedActivity {
 				e.printStackTrace();
 			}
             m_app = (TodoApplication)getActivity().getApplication();
-            if (m_app.isCloudLess()) {
-                PreferenceCategory dropboxCategory = (PreferenceCategory) findPreference(getString(R.string.dropbox_cat_key));
-                getPreferenceScreen().removePreference(dropboxCategory);
-            }
         }
 
         @Override
@@ -126,17 +122,6 @@ public class Preferences extends ThemedActivity {
                                 Preferences.RESULT_ARCHIVE);
                     }
                 }, R.string.archive_task_title);
-
-			} else if (preference.getKey().equals("logout_dropbox")) {
-				Log.v("PREFERENCES", "Logging out from Dropbox");
-                m_app.showConfirmationDialog(this.getActivity(), R.string.logout_message, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        ((Preferences) getActivity()).broadcastIntentAndClose(
-                                getActivity().getPackageName()+Constants.BROADCAST_ACTION_LOGOUT,
-                                Preferences.RESULT_LOGOUT);
-                    }
-                }, R.string.dropbox_logout_pref_title);
 
 			} 
 			return true;

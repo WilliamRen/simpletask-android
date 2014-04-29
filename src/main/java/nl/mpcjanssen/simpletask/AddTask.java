@@ -169,12 +169,10 @@ public class AddTask extends ThemedActivity {
             taskBag.addAsTask(taskText);
         }
 
-        m_app.setNeedToPush(true);
         m_app.updateWidgets();
         if (m_app.isAutoArchive()) {
             taskBag.archive(null);
         }
-        sendBroadcast(new Intent(Constants.BROADCAST_START_SYNC_WITH_REMOTE));
         finish();
     }
 
@@ -198,10 +196,7 @@ public class AddTask extends ThemedActivity {
         for (String task : taskText.split("\r\n|\r|\n")) {
             taskBag.addAsTask(task);
         }
-        m_app.setNeedToPush(true);
         m_app.updateWidgets();
-        sendBroadcast(new Intent(
-                Constants.BROADCAST_START_SYNC_WITH_REMOTE));
         m_app.showToast(R.string.task_added);
     }
 
@@ -246,8 +241,8 @@ public class AddTask extends ThemedActivity {
             return;
         } else if (Constants.INTENT_BACKGROUND_TASK.equals(action)) {
             Log.v(TAG, "Adding background task");
-            if (intent.hasExtra(Constants.EXTRA_BACKGROUND_TASK)) {
-                addBackgroundTask(intent.getStringExtra(Constants.EXTRA_BACKGROUND_TASK));
+            if (intent.hasExtra(Constants.EXTRA_TASK)) {
+                addBackgroundTask(intent.getStringExtra(Constants.EXTRA_TASK));
             } else {
                 Log.w(TAG, "Task was not in extras");
             }
@@ -469,7 +464,7 @@ public class AddTask extends ThemedActivity {
 
     private void showTagMenu() {
         final Set<String> projects = new TreeSet<String>();
-        projects.addAll(taskBag.getProjects(false));
+        projects.addAll(taskBag.getProjects());
         // Also display contexts in tasks being added
         Task t = new Task(0,textInputField.getText().toString());
         projects.addAll(t.getTags());
@@ -536,7 +531,7 @@ public class AddTask extends ThemedActivity {
 
     private void showContextMenu() {
         final Set<String> contexts = new TreeSet<String>();
-        contexts.addAll(taskBag.getContexts(false));
+        contexts.addAll(taskBag.getContexts());
         // Also display contexts in tasks being added
         Task t = new Task(0,textInputField.getText().toString());
         contexts.addAll(t.getLists());

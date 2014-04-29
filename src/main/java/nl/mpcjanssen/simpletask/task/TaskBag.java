@@ -19,6 +19,7 @@
  * @author Todo.txt contributors <todotxt@yahoogroups.com>
  * @license http://www.gnu.org/licenses/gpl.html
  * @copyright 2009-2012 Todo.txt contributors (http://todotxt.com)
+ * @copyright 2013- Mark Janssen
  */
 package nl.mpcjanssen.simpletask.task;
 
@@ -27,8 +28,6 @@ import android.content.SharedPreferences;
 import org.joda.time.DateTime;
 
 import nl.mpcjanssen.simpletask.Simpletask;
-import nl.mpcjanssen.simpletask.remote.PullTodoResult;
-import nl.mpcjanssen.simpletask.remote.RemoteClientManager;
 import nl.mpcjanssen.simpletask.util.TaskIo;
 import nl.mpcjanssen.simpletask.util.Util;
 
@@ -50,24 +49,30 @@ public class TaskBag {
     final static String TAG = Simpletask.class.getSimpleName();
     private Preferences preferences;
     private final LocalFileTaskRepository localRepository;
-    private final RemoteClientManager remoteClientManager;
     private ArrayList<Task> tasks = new ArrayList<Task>();
-    private Date lastReload = null;
-    private Date lastSync = null;
+
+    //cached values
+    TreeSet<Priority> prios = null;
+    TreeSet<String> tags = null;
+    TreeSet<String> lists = null;
+
 
     public TaskBag(Preferences taskBagPreferences,
-                   LocalFileTaskRepository localTaskRepository,
-                   RemoteClientManager remoteClientManager) {
+                   LocalFileTaskRepository localTaskRepository) {
         this.preferences = taskBagPreferences;
         this.localRepository = localTaskRepository;
-        this.remoteClientManager = remoteClientManager;
+    }
+
+
+    public void invalidateCache() {
+        prios = null;
+        tags = null;
+        lists = null;
     }
 
 
     private void store(ArrayList<Task> tasks) {
         localRepository.store(tasks);
-
-        lastReload = null;
     }
 
     public void store() {
@@ -84,12 +89,8 @@ public class TaskBag {
     }
 
     public void reload() {
-        if (lastReload == null || localRepository.todoFileModifiedSince(lastReload)) {
-            localRepository.init();
-            this.tasks = localRepository.load();
-            lastReload = new Date();
-
-        }
+        invalidateCache();
+        this.tasks = localRepository.load();
     }
 
     public int size() {
@@ -114,6 +115,7 @@ public class TaskBag {
 		tasks.add(0,task);
 	    }
             store();
+            invalidateCache();
             return task;
         } catch (Exception e) {
             throw new TaskPersistException("An error occurred while adding {"
@@ -126,105 +128,44 @@ public class TaskBag {
         if (index!=-1) {
             tasks.get(index).init(input, null);
             store();
+            invalidateCache();
         }
     }
 
     public void delete(Task task) {
         tasks.remove(task);
+        invalidateCache();
     }
 
-    /* REMOTE APIS */
-    public void pushToRemote(boolean overwrite) {
-        pushToRemote(false, overwrite);
-    }
 
-    public void pushToRemote(boolean overridePreference, boolean overwrite) {
-        if (this.preferences.isOnline() || overridePreference) {
-            File doneFile = null;
-            if (localRepository.doneFileModifiedSince(lastSync)) {
-                doneFile = localRepository.DONE_TXT_FILE;
+    public TreeSet<Priority> getPriorities() {
+        if (prios == null) {
+            prios = new TreeSet<Priority>();
+            for (Task item : tasks) {
+                prios.add(item.getPriority());
             }
-            remoteClientManager.getRemoteClient().pushTodo(
-                    localRepository.TODO_TXT_FILE,
-                    doneFile,
-                    overwrite);
-            lastSync = new Date();
         }
+        return prios;
     }
 
-    public void pullFromRemote(boolean overridePreference) {
-        try {
-            if (this.preferences.isOnline() || overridePreference) {
-                PullTodoResult result = remoteClientManager.getRemoteClient()
-                        .pullTodo();
-                File todoFile = result.getTodoFile();
-                if (todoFile != null && todoFile.exists()) {
-                    ArrayList<Task> remoteTasks = TaskIo
-                            .loadTasksFromFile(todoFile, preferences);
-                    store(remoteTasks);
-                    reload();
-                }
-
-                File doneFile = result.getDoneFile();
-                if (doneFile != null && doneFile.exists()) {
-                    localRepository.loadDoneTasks(doneFile);
-                } else if (doneFile == null) {
-                    // Dropbox has no done file so remove this one
-                    localRepository.removeDoneFile();
-                }
-                lastSync = new Date();
+    public TreeSet<String> getContexts() {
+        if (lists == null) {
+            lists = new TreeSet<String>();
+            for (Task item : tasks) {
+                lists.addAll(item.getLists());
             }
-        } catch (IOException e) {
-            throw new TaskPersistException(
-                    "Error loading tasks from remote file", e);
         }
+        return lists;
     }
 
-    public ArrayList<Priority> getPriorities() {
-        // TODO cache this after reloads?
-        Set<Priority> res = new HashSet<Priority>();
-        for (Task item : tasks) {
-            res.add(item.getPriority());
+    public TreeSet<String> getProjects() {
+        if (tags == null) {
+            tags = new TreeSet<String>();
+            for (Task item : tasks) {
+                tags.addAll(item.getTags());
+            }
         }
-        ArrayList<Priority> ret = new ArrayList<Priority>(res);
-        Collections.sort(ret);
-        return ret;
-    }
-
-    public ArrayList<String> getContexts(boolean includeNone) {
-        // TODO cache this after reloads?
-        Set<String> res = new HashSet<String>();
-        for (Task item : tasks) {
-            res.addAll(item.getLists());
-        }
-        ArrayList<String> ret = new ArrayList<String>(res);
-        Collections.sort(ret);
-        if (includeNone) {
-            ret.add(0, "-");
-        }
-        return ret;
-    }
-
-    public ArrayList<String> getProjects(boolean includeNone) {
-        // TODO cache this after reloads?
-        Set<String> res = new HashSet<String>();
-        for (Task item : tasks) {
-            res.addAll(item.getTags());
-        }
-        ArrayList<String> ret = new ArrayList<String>(res);
-        Collections.sort(ret);
-        if (includeNone) {
-            ret.add(0, "-");
-        }
-        return ret;
-    }
-
-    public ArrayList<String> getDecoratedContexts(boolean includeNone) {
-        return Util.prefixItems("@", getContexts(includeNone));
-    }
-
-    public ArrayList<String> getDecoratedProjects(boolean includeNone) {
-        return Util.prefixItems("+", getProjects(includeNone));
+        return tags;
     }
 
     public static class Preferences {

@@ -29,29 +29,9 @@ android {
         versionCode 1079
     }
 
-
-    productFlavors {
-        free {
-            packageName 'nl.mpcjanssen.todotxtholo'
-            buildConfigField "boolean", "CLOUDLESS", "false"
-        }
-        // Special flavor for testing as this is uninstalled after
-        // completion of the test run
-        unit {
-            packageName 'nl.mpcjanssen.simpletask.test'
-            buildConfigField "boolean", "CLOUDLESS", "true"
-        }
-        cloudless {
-            packageName 'nl.mpcjanssen.simpletask'
-            buildConfigField "boolean", "CLOUDLESS", "true"
-        }
-    }
-
     dependencies {
-        freeCompile fileTree(dir: 'libs', include: '*.jar')
         compile 'com.android.support:support-v4:19.0.0'
         compile 'joda-time:joda-time:2.3'
-        compile 'org.commonjava.googlecode.markdown4j:markdown4j:2.2-cj-1.0'
     }
 
     signingConfigs {
@@ -65,7 +45,7 @@ android {
             signingConfig signingConfigs.release
         }
     }
-    check.dependsOn 'connectedInstrumentTestUnitDebug'
+   check.dependsOn 'connectedInstrumentTest'
 }
 
 // Only sign if we have keystore properties in the gradle.properties

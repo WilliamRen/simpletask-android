@@ -16,7 +16,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.TreeSet;
 
 import nl.mpcjanssen.simpletask.R;
 import nl.mpcjanssen.simpletask.task.Task;
@@ -28,15 +28,21 @@ public class DrawerAdapter extends BaseAdapter implements ListAdapter {
     int projectHeaderPos;
     private LayoutInflater m_inflater;
 
-    public DrawerAdapter(LayoutInflater inflater, List<String> contexts, List<String> projects) {
+    public DrawerAdapter(LayoutInflater inflater, TreeSet<String> contexts, TreeSet<String> projects) {
         this.m_inflater = inflater;
-        this.items = new ArrayList<String>();
-        this.items.add("Lists");
+        items = new ArrayList<String>();
+        items.add("Lists");
         contextHeaderPos = 0;
-        this.items.addAll(contexts);
+        items.add("@-");
+        for (String s: contexts ) {
+            items.add("@" + s);
+        }
         projectHeaderPos = items.size();
-        this.items.add("Tags");
-        this.items.addAll(projects);
+        items.add("Tags");
+        items.add("+-");
+        for (String s: projects) {
+            items.add("+" + s);
+        }
     }
 
     private boolean isHeader(int position) {
@@ -60,8 +66,7 @@ public class DrawerAdapter extends BaseAdapter implements ListAdapter {
 
     @Override
     public boolean hasStableIds() {
-        return true; // To change body of implemented methods use File |
-        // Settings | File Templates.
+        return true; 
     }
 
     @Override
@@ -84,7 +89,6 @@ public class DrawerAdapter extends BaseAdapter implements ListAdapter {
             tv = (TextView) convertView;
             tv.setText(items.get(position).substring(1));
         }
-
         return convertView;
     }
 

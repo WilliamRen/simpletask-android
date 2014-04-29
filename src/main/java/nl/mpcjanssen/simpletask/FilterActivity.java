@@ -90,7 +90,7 @@ public class FilterActivity extends ThemedActivity {
         }
         // Fill arguments for fragment
         arguments = new Bundle();        
-        arguments.putStringArrayList(FILTER_ITEMS, taskBag.getContexts(true));
+        arguments.putStringArrayList(FILTER_ITEMS, new ArrayList<String>(taskBag.getContexts()));
         arguments.putStringArrayList(INITIAL_SELECTED_ITEMS, mFilter.getContexts());
         arguments.putBoolean(INITIAL_NOT, mFilter.getContextsNot());
         actionbar.addTab(actionbar.newTab()
@@ -100,7 +100,7 @@ public class FilterActivity extends ThemedActivity {
 
         // Fill arguments for fragment
         arguments = new Bundle();
-        arguments.putStringArrayList(FILTER_ITEMS, taskBag.getProjects(true));
+        arguments.putStringArrayList(FILTER_ITEMS, new ArrayList<String>(new ArrayList<String>(taskBag.getProjects())));
         arguments.putStringArrayList(INITIAL_SELECTED_ITEMS, mFilter.getProjects());
         arguments.putBoolean(INITIAL_NOT, mFilter.getProjectsNot());
         actionbar.addTab(actionbar.newTab()
