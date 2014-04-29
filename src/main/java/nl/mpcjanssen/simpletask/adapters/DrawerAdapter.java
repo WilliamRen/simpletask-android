@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 import nl.mpcjanssen.simpletask.R;
+import nl.mpcjanssen.simpletask.task.Priority;
 import nl.mpcjanssen.simpletask.task.Task;
 
 public class DrawerAdapter extends BaseAdapter implements ListAdapter {
@@ -26,9 +27,13 @@ public class DrawerAdapter extends BaseAdapter implements ListAdapter {
     ArrayList<String> items;
     int contextHeaderPos;
     int projectHeaderPos;
+    int priosHeaderPos;
     private LayoutInflater m_inflater;
 
-    public DrawerAdapter(LayoutInflater inflater, TreeSet<String> contexts, TreeSet<String> projects) {
+    public DrawerAdapter(LayoutInflater inflater, 
+            TreeSet<String> contexts, 
+            TreeSet<String> projects, 
+            TreeSet<Priority> priorities) {
         this.m_inflater = inflater;
         items = new ArrayList<String>();
         items.add("Lists");
@@ -43,10 +48,17 @@ public class DrawerAdapter extends BaseAdapter implements ListAdapter {
         for (String s: projects) {
             items.add("+" + s);
         }
+        priosHeaderPos = items.size();
+        items.add("Prios");
+        for (Priority prio: priorities) {
+            items.add("*" + prio.getCode());
+        }
     }
 
     private boolean isHeader(int position) {
-        return (position == contextHeaderPos || position == projectHeaderPos);
+        return (position == contextHeaderPos || 
+                position == projectHeaderPos ||
+                position == priosHeaderPos);
     }
 
     @Override
@@ -131,5 +143,9 @@ public class DrawerAdapter extends BaseAdapter implements ListAdapter {
 
     public int getProjectsHeaderPosition () {
         return projectHeaderPos;
+    }
+
+    public int getPriosHeaderPosition () {
+        return priosHeaderPos;
     }
 }

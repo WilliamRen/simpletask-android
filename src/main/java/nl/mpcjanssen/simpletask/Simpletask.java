@@ -959,7 +959,10 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
     private void updateLeftDrawer() {
         TaskBag taskBag = getTaskBag();
         DrawerAdapter drawerAdapter = new DrawerAdapter(getLayoutInflater(),
-							taskBag.getContexts(), taskBag.getProjects());
+							taskBag.getContexts(), 
+                            taskBag.getProjects(),
+                            taskBag.getPriorities()
+                            );
 
 	m_leftDrawerList.setAdapter(drawerAdapter);
         m_leftDrawerList.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
@@ -1682,22 +1685,29 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	    if (adapter.getProjectsHeaderPosition()==position) {
 		mFilter.setProjectsNot(!mFilter.getProjectsNot());
 	    }
+	    if (adapter.getPriosHeaderPosition()==position) {
+		mFilter.setPrioritiesNot(!mFilter.getPrioritiesNot());
+	    }
 	    if (adapter.getContextHeaderPosition()==position) {
 		mFilter.setContextsNot(!mFilter.getContextsNot());
 	    } else {
 		tags = Util.getCheckedItems(lv,true);
 		ArrayList<String> filteredContexts = new ArrayList<String>();
 		ArrayList<String> filteredProjects = new ArrayList<String>();
+		ArrayList<String> filteredPriorities = new ArrayList<String>();
 
 		for (String tag : tags) {
 		    if (tag.startsWith("+")) {
 			filteredProjects.add(tag.substring(1));
 		    } else if (tag.startsWith("@")) {
 			filteredContexts.add(tag.substring(1));
-		    }
+            } else if (tag.startsWith("*")) {
+			filteredPriorities.add(tag.substring(1));
+            }
 		}
 		mFilter.setContexts(filteredContexts);
 		mFilter.setProjects(filteredProjects);
+		mFilter.setPriorities(filteredPriorities);
 	    }
 	    Intent intent = getIntent();
 
@@ -1706,7 +1716,6 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	    adapter.notifyDataSetChanged();
 	    finishActionmode();
 	    m_adapter.setFilteredTasks(false);
-	    //m_drawerLayout.closeDrawer(Gravity.LEFT);
 	}
     }
 
