@@ -174,7 +174,6 @@ public class Util {
                                                  CharSequence[] keys, String[] values, int selected, Integer titleId,
                                                  Integer iconId, final OnSingleChoiceDialogListener listener) {
 
-        assert(values.length == keys.length);
         AlertDialog.Builder builder = new AlertDialog.Builder(cxt);
         if (iconId != null) {
             builder.setIcon(iconId);

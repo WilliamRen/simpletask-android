@@ -50,6 +50,7 @@ public class DrawerAdapter extends BaseAdapter implements ListAdapter {
         }
         priosHeaderPos = items.size();
         items.add("Prios");
+        items.add("*-");
         for (Priority prio: priorities) {
             items.add("*" + prio.getCode());
         }
@@ -85,7 +86,7 @@ public class DrawerAdapter extends BaseAdapter implements ListAdapter {
     public View getView(int position, View convertView, ViewGroup parent) {
         TextView tv;
         if (isHeader(position)) {
-            convertView = m_inflater.inflate(R.layout.drawer_list_header, null);
+            convertView = m_inflater.inflate(R.layout.drawer_list_header, parent, false);
             tv = (TextView) convertView;
             ListView lv = (ListView) parent;
             if (lv.isItemChecked(position)) {
@@ -96,7 +97,7 @@ public class DrawerAdapter extends BaseAdapter implements ListAdapter {
 
         } else {
             if (convertView == null) {
-                convertView = m_inflater.inflate(R.layout.drawer_list_item_checked, null);
+                convertView = m_inflater.inflate(R.layout.drawer_list_item_checked, parent, false);
             }
             tv = (TextView) convertView;
             tv.setText(items.get(position).substring(1));

@@ -1166,7 +1166,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	public View getView(int position, View convertView, ViewGroup parent) {
 	    VisibleLine line = visibleLines.get(position);
 	    if (line.header) {
-		convertView = m_inflater.inflate(R.layout.list_header, null);
+		convertView = m_inflater.inflate(R.layout.list_header, parent, false);
 		TextView t = (TextView) convertView
 		    .findViewById(R.id.list_header_title);
 		t.setText(line.title);
@@ -1174,7 +1174,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
 	    } else {
 		final ViewHolder holder;
 		if (convertView == null) {
-		    convertView = m_inflater.inflate(R.layout.list_item, null);
+		    convertView = m_inflater.inflate(R.layout.list_item, parent, false);
 		    holder = new ViewHolder();
 		    holder.tasktext = (TextView) convertView
 			.findViewById(R.id.tasktext);
@@ -1547,7 +1547,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
         }
 
 
-        View view = getLayoutInflater().inflate(R.layout.tag_dialog, null);
+        View view = getLayoutInflater().inflate(R.layout.tag_dialog, null, false);
         final ListView lv = (ListView) view.findViewById(R.id.listView);
         lv.setAdapter(new ArrayAdapter<String>(this, R.layout.simple_list_item_multiple_choice,
 					       contexts.toArray(new String[contexts.size()] )));
@@ -1617,7 +1617,7 @@ public class Simpletask extends ThemedListActivity  implements AdapterView.OnIte
         }
 
 
-        View view = getLayoutInflater().inflate(R.layout.tag_dialog, null);
+        View view = getLayoutInflater().inflate(R.layout.tag_dialog, null, false);
         final ListView lv = (ListView) view.findViewById(R.id.listView);
         lv.setAdapter(new ArrayAdapter<String>(this, R.layout.simple_list_item_multiple_choice,
 					       projects.toArray(new String[projects.size()] )));
